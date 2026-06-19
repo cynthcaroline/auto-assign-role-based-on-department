@@ -1,0 +1,66 @@
+version: "3"
+services:
+
+  fastapi:
+    build: .
+    container_name: fastapi
+    ports:
+      - "8000:8000"
+    networks:
+      - iam-network
+
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_SECURE_COOKIE=false
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=iam_provisioning
+      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_PASSWORD=yourpassword
+    depends_on:
+      - postgres
+    networks:
+      - iam-network
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=yourpassword
+      - POSTGRES_DB=iam_provisioning
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - iam-network
+
+  metabase:
+    image: metabase/metabase
+    container_name: metabase
+    ports:
+      - "3000:3000"
+    environment:
+      - MB_DB_TYPE=postgres
+      - MB_DB_HOST=postgres
+      - MB_DB_PORT=5432
+      - MB_DB_DBNAME=iam_provisioning
+      - MB_DB_USER=postgres
+      - MB_DB_PASS=yourpassword
+    depends_on:
+      - postgres
+    networks:
+      - iam-network
+
+volumes:
+  postgres_data:
+
+networks:
+  iam-network:
+    driver: bridge
